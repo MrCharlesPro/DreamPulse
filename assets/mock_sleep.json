@@ -1,0 +1,16 @@
+[
+  {"id":"mock-01","inicio":"2026-10-08T22:42:00.000","fin":"2026-10-09T06:51:00.000","calidad":4,"origen":"simulado"},
+  {"id":"mock-02","inicio":"2026-10-07T23:08:00.000","fin":"2026-10-08T07:01:00.000","calidad":4,"origen":"simulado"},
+  {"id":"mock-03","inicio":"2026-10-06T22:56:00.000","fin":"2026-10-07T06:20:00.000","calidad":3,"origen":"simulado"},
+  {"id":"mock-04","inicio":"2026-10-05T23:31:00.000","fin":"2026-10-06T07:42:00.000","calidad":5,"origen":"simulado"},
+  {"id":"mock-05","inicio":"2026-10-04T22:47:00.000","fin":"2026-10-05T06:34:00.000","calidad":4,"origen":"simulado"},
+  {"id":"mock-06","inicio":"2026-10-03T00:12:00.000","fin":"2026-10-03T07:02:00.000","calidad":3,"origen":"simulado"},
+  {"id":"mock-07","inicio":"2026-10-02T22:24:00.000","fin":"2026-10-03T06:48:00.000","calidad":5,"origen":"simulado"},
+  {"id":"mock-08","inicio":"2026-10-01T23:17:00.000","fin":"2026-10-02T06:57:00.000","calidad":4,"origen":"simulado"},
+  {"id":"mock-09","inicio":"2026-09-30T23:42:00.000","fin":"2026-10-01T06:21:00.000","calidad":3,"origen":"simulado"},
+  {"id":"mock-10","inicio":"2026-09-29T22:39:00.000","fin":"2026-09-30T06:55:00.000","calidad":4,"origen":"simulado"},
+  {"id":"mock-11","inicio":"2026-09-28T23:01:00.000","fin":"2026-09-29T07:10:00.000","calidad":5,"origen":"simulado"},
+  {"id":"mock-12","inicio":"2026-09-27T00:05:00.000","fin":"2026-09-27T07:39:00.000","calidad":3,"origen":"simulado"},
+  {"id":"mock-13","inicio":"2026-09-26T22:52:00.000","fin":"2026-09-27T06:41:00.000","calidad":4,"origen":"simulado"},
+  {"id":"mock-14","inicio":"2026-09-25T23:26:00.000","fin":"2026-09-26T07:03:00.000","calidad":4,"origen":"simulado"}
+]
