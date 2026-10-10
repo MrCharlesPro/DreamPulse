@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/utils/sleep_utils.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/widgets/estado_pantalla.dart';
 import '../../domain/entities/registro_sueno.dart';
 import '../controllers/history_controller.dart';
@@ -47,6 +48,28 @@ class HistoryScreen extends StatelessWidget {
               Text(
                 'Tu historial',
                 style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Mes anterior',
+                    onPressed: () => filtros.cambiarMes(-1),
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Expanded(
+                    child: Text(
+                      '${filtros.mesSeleccionado.month.toString().padLeft(2, '0')}/${filtros.mesSeleccionado.year}',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Mes siguiente',
+                    onPressed: () => filtros.cambiarMes(1),
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               TextField(
@@ -134,12 +157,12 @@ class HistoryScreen extends StatelessWidget {
                         padding: const EdgeInsets.only(right: 20),
                         alignment: Alignment.centerRight,
                         decoration: BoxDecoration(
-                          color: Colors.red.shade700,
+                          color: Theme.of(context).colorScheme.error,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.delete_outline,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onError,
                         ),
                       ),
                       confirmDismiss: (_) async {
@@ -224,7 +247,7 @@ class _FilaRegistro extends StatelessWidget {
           backgroundColor: Theme.of(
             context,
           ).colorScheme.primary.withValues(alpha: .13),
-          child: const Icon(Icons.nightlight, color: Color(0xFFC9BFFF)),
+          child: const Icon(Icons.nightlight, color: AppConstants.coral),
         ),
         title: Text(SleepUtils.fecha(registro.inicio)),
         subtitle: Padding(
@@ -253,7 +276,7 @@ class _FilaRegistro extends StatelessWidget {
             (_) => const Icon(
               Icons.star_rounded,
               size: 14,
-              color: Color(0xFFFFD166),
+              color: AppConstants.ambar,
             ),
           ),
         ),

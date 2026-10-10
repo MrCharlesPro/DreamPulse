@@ -8,12 +8,17 @@ class HistoryController extends ChangeNotifier {
   OrigenRegistro? _origen;
   bool _masRecientePrimero = true;
   String _busqueda = '';
+  DateTime _mesSeleccionado = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+  );
 
   DateTime? get desde => _desde;
   DateTime? get hasta => _hasta;
   OrigenRegistro? get origen => _origen;
   bool get masRecientePrimero => _masRecientePrimero;
   String get busqueda => _busqueda;
+  DateTime get mesSeleccionado => _mesSeleccionado;
 
   List<RegistroSueno> filtrar(List<RegistroSueno> registros) {
     final resultado =
@@ -35,7 +40,11 @@ class HistoryController extends ChangeNotifier {
                   .contains(_busqueda) ||
               '${registro.inicio.day}/${registro.inicio.month}/${registro.inicio.year}'
                   .contains(_busqueda);
+          final coincideMes =
+              fechaRegistro.year == _mesSeleccionado.year &&
+              fechaRegistro.month == _mesSeleccionado.month;
           return coincideFecha &&
+              coincideMes &&
               coincideBusqueda &&
               (_origen == null || registro.origen == _origen);
         }).toList()..sort(
@@ -44,6 +53,14 @@ class HistoryController extends ChangeNotifier {
               : a.inicio.compareTo(b.inicio),
         );
     return resultado;
+  }
+
+  void cambiarMes(int delta) {
+    _mesSeleccionado = DateTime(
+      _mesSeleccionado.year,
+      _mesSeleccionado.month + delta,
+    );
+    notifyListeners();
   }
 
   void seleccionarRango(DateTimeRange? rango) {

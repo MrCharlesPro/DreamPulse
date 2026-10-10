@@ -4,7 +4,10 @@ import 'package:provider/provider.dart';
 import '../../domain/entities/usuario.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/settings_controller.dart';
+import '../../core/constants/app_constants.dart';
+import 'achievements_screen.dart';
 import 'devices_screen.dart';
+import 'export_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -108,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 12),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.alarm, color: Color(0xFFC9BFFF)),
+            leading: const Icon(Icons.alarm, color: AppConstants.coral),
             title: const Text('Hora ideal de dormir'),
             subtitle: Text(_horaIdeal.format(context)),
             trailing: const Icon(Icons.chevron_right),
@@ -169,6 +172,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const DevicesScreen()),
+            ),
+          ),
+        ),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.emoji_events_outlined),
+            title: const Text('Logros y rachas'),
+            subtitle: const Text('Descubre tus avances de descanso'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const AchievementsScreen(),
+              ),
+            ),
+          ),
+        ),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.ios_share),
+            title: const Text('Exportar y respaldar'),
+            subtitle: const Text('CSV, PDF y respaldo JSON local'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const ExportScreen()),
             ),
           ),
         ),

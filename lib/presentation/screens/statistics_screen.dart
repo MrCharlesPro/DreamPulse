@@ -6,6 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../../presentation/controllers/profile_controller.dart';
 import '../../presentation/controllers/sleep_controller.dart';
 import '../controllers/stats_controller.dart';
+import '../widgets/monthly_sleep_grid.dart';
 
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
@@ -50,6 +51,13 @@ class StatisticsScreen extends StatelessWidget {
                   onSelectionChanged: (value) =>
                       statsController.cambiarRango(value.first),
                 ),
+                if (statsController.dias == 30) ...[
+                  const SizedBox(height: 12),
+                  MonthlySleepGrid(
+                    noches: sleepController.registros,
+                    metaHoras: profile.metaHoras,
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -119,7 +127,9 @@ class StatisticsScreen extends StatelessWidget {
                                   barRods: [
                                     BarChartRodData(
                                       toY: datos.horasPorNoche[index],
-                                      color: AppConstants.violeta,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                       width: 14,
                                       borderRadius: BorderRadius.circular(5),
                                     ),
@@ -224,6 +234,34 @@ class StatisticsScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  'Patrones en tus etiquetas',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                if (statsController.insights(sleepController.registros).isEmpty)
+                  const Card(
+                    child: ListTile(
+                      leading: Icon(Icons.auto_awesome_outlined),
+                      title: Text('Aún no hay patrones claros'),
+                      subtitle: Text(
+                        'Añade etiquetas en tus noches y registra varias observaciones.',
+                      ),
+                    ),
+                  )
+                else
+                  ...statsController
+                      .insights(sleepController.registros)
+                      .map(
+                        (insight) => Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.insights_outlined),
+                            title: Text(insight.titulo),
+                            subtitle: Text(insight.detalle),
+                          ),
+                        ),
+                      ),
               ],
             ),
     );

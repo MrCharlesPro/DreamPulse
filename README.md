@@ -23,10 +23,12 @@ services (BLE, simulación de wearable, sincronización y avisos locales)
 ## Funciones
 
 - Registro manual con fecha y hora, cruce de medianoche, duración calculada, validación y calidad de 1 a 5.
-- Dashboard con último descanso, estrellas, progreso contra meta, gráfico semanal y resumen.
-- Historial con búsqueda por fecha, rango, origen, orden, edición y eliminación con confirmación/deshacer.
+- Dashboard con último descanso, puntaje animado de 0 a 100, gráfico semanal, acciones rápidas para iniciar/cerrar una noche y resumen.
+- Historial con selector mensual, búsqueda por fecha, rango, origen, orden, edición y eliminación con confirmación/deshacer.
 - Perfil editable con edad, hora de descanso ideal y meta de 4 a 12 horas.
-- Estadísticas para rangos de 7 y 30 días, calidad, promedio, mejor/peor noche, deuda y variación de hora.
+- Estadísticas para rangos de 7 y 30 días, incluyendo tabla mensual animada con horas/calidad, promedios, deuda, consistencia e insights basados en etiquetas.
+- Rachas y logros por metas cumplidas; notas y etiquetas por noche (café, estrés, ejercicio, pantallas y alcohol).
+- Exportación compartible del historial a CSV/PDF, además de respaldo y restauración JSON local.
 - Consejos de higiene del sueño y recordatorio diario configurable.
 - Wearable simulado para demostración sin reloj. El modo Bluetooth busca y conecta dispositivos BLE cercanos.
 
@@ -55,6 +57,8 @@ APK generado en `build/app/outputs/flutter-apk/app-release.apk`.
 ## Decisiones y limitaciones
 
 - Hive almacena mapas sin generadores ni sincronización remota; los datos permanecen en el dispositivo.
+- Las nuevas claves `notas` y `etiquetas` son opcionales al leer mapas existentes, conservando la compatibilidad con datos Hive anteriores.
+- La tabla mensual clasifica la duración con relación a la meta y calcula un promedio sobre las noches registradas del mes, no sobre días vacíos.
 - La fuente simulada crea noches ficticias y permite demostrar búsqueda, vinculación y sincronización de forma offline.
 - BLE es dependiente del fabricante. La app maneja permisos, búsqueda, conexión y desconexión, pero no hay un perfil GATT universal para noches de sueño; integrar lecturas reales requiere el servicio/características documentados por el wearable objetivo.
 - `flutter_blue_plus` requiere cumplir su licencia correspondiente al tipo de distribución. Esta versión selecciona la categoría educativa/no lucrativa.

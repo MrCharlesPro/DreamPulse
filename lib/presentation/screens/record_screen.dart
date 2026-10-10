@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/constants/app_constants.dart';
+import '../../core/widgets/boton_degradado.dart';
 import '../../core/utils/sleep_utils.dart';
+import '../../domain/entities/etiqueta_sueno.dart';
 import '../../domain/entities/registro_sueno.dart';
 import '../controllers/sleep_controller.dart';
 
@@ -19,6 +22,8 @@ class _RecordScreenState extends State<RecordScreen> {
   late DateTime _fin;
   double _calidad = 4;
   bool _guardando = false;
+  late final TextEditingController _notas;
+  late final Set<EtiquetaSueno> _etiquetas;
 
   @override
   void initState() {
@@ -33,6 +38,14 @@ class _RecordScreenState extends State<RecordScreen> {
         ).subtract(const Duration(days: 1)).add(const Duration(hours: 23));
     _fin = widget.registro?.fin ?? _inicio.add(const Duration(hours: 8));
     _calidad = (widget.registro?.calidad ?? 4).toDouble();
+    _notas = TextEditingController(text: widget.registro?.notas ?? '');
+    _etiquetas = {...?widget.registro?.etiquetas};
+  }
+
+  @override
+  void dispose() {
+    _notas.dispose();
+    super.dispose();
   }
 
   Future<DateTime?> _seleccionar(DateTime valor) async {
@@ -75,6 +88,8 @@ class _RecordScreenState extends State<RecordScreen> {
           fin: finEfectivo,
           calidad: _calidad.round(),
           origen: widget.registro?.origen ?? OrigenRegistro.manual,
+          notas: _notas.text.trim(),
+          etiquetas: _etiquetas.toList(),
         ),
       );
       if (!mounted) return;
@@ -99,18 +114,55 @@ class _RecordScreenState extends State<RecordScreen> {
     }
   }
 
+  Future<void> _eliminar() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar registro'),
+        content: const Text('Esta noche se quitará del historial.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+    try {
+      await context.read<SleepController>().eliminar(widget.registro!.id);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Registro eliminado')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo eliminar: $error')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final duracion = SleepUtils.duracion(_inicio, _fin);
-    return ListView(
+    final formulario = ListView(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
       children: [
-        Text(
-          widget.registro == null ? 'Registra tu sueño' : 'Editar registro',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
-        ),
+        if (widget.registro == null)
+          Text(
+            'Registra tu sueño',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+          ),
         const SizedBox(height: 8),
         const Text('Cada noche cuenta. Registra cómo descansaste.'),
         const SizedBox(height: 24),
@@ -139,7 +191,7 @@ class _RecordScreenState extends State<RecordScreen> {
             padding: const EdgeInsets.all(18),
             child: Row(
               children: [
-                const Icon(Icons.hourglass_bottom, color: Color(0xFFC9BFFF)),
+                const Icon(Icons.hourglass_bottom, color: AppConstants.coral),
                 const SizedBox(width: 12),
                 const Expanded(child: Text('Duración total')),
                 Text(
@@ -188,7 +240,7 @@ class _RecordScreenState extends State<RecordScreen> {
                       indice < _calidad.round()
                           ? Icons.star
                           : Icons.star_border,
-                      color: const Color(0xFFFFD166),
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                 ),
@@ -196,21 +248,112 @@ class _RecordScreenState extends State<RecordScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        SizedBox(
-          height: 54,
-          child: FilledButton.icon(
-            onPressed: _guardando ? null : _guardar,
-            icon: _guardando
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check),
-            label: Text(_guardando ? 'Guardando…' : 'Guardar registro'),
+        const SizedBox(height: 18),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Notas de la noche',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _notas,
+                  minLines: 2,
+                  maxLines: 4,
+                  maxLength: 300,
+                  decoration: const InputDecoration(
+                    hintText: '¿Algo que quieras recordar?',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Etiquetas',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: EtiquetaSueno.values
+                      .map(
+                        (etiqueta) => FilterChip(
+                          label: Text(
+                            '${etiqueta.emoticon} ${etiqueta.titulo}',
+                          ),
+                          selected: _etiquetas.contains(etiqueta),
+                          onSelected: (seleccionado) => setState(() {
+                            if (seleccionado) {
+                              _etiquetas.add(etiqueta);
+                            } else {
+                              _etiquetas.remove(etiqueta);
+                            }
+                          }),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
           ),
         ),
+        const SizedBox(height: 24),
+        BotonDegradado(
+          height: 54,
+          onPressed: _guardando ? null : _guardar,
+          icon: _guardando
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.check),
+          label: Text(
+            _guardando
+                ? 'Guardando…'
+                : widget.registro == null
+                ? 'Guardar registro'
+                : 'Guardar cambios',
+          ),
+        ),
+        if (widget.registro != null) ...[
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 50,
+            child: OutlinedButton.icon(
+              onPressed: _guardando ? null : _eliminar,
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Eliminar'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
+        ],
       ],
+    );
+    if (widget.registro == null) {
+      return SingleChildScrollView(child: formulario);
+    }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Editar registro'),
+        leading: IconButton(
+          tooltip: 'Volver',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Eliminar registro',
+            onPressed: _guardando ? null : _eliminar,
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
+      ),
+      body: SafeArea(child: SingleChildScrollView(child: formulario)),
     );
   }
 }
@@ -231,7 +374,7 @@ class _SelectorHorario extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     child: ListTile(
       minVerticalPadding: 14,
-      leading: Icon(icono, color: const Color(0xFFC9BFFF)),
+      leading: Icon(icono, color: Theme.of(context).colorScheme.primary),
       title: Text(titulo),
       subtitle: Text('${SleepUtils.fecha(valor)} · ${SleepUtils.hora(valor)}'),
       trailing: const Icon(Icons.edit_calendar_outlined),

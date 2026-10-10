@@ -3,9 +3,16 @@ import 'package:dreampulse/domain/entities/registro_sueno.dart';
 import 'package:dreampulse/domain/entities/usuario.dart';
 import 'package:dreampulse/domain/repositories/profile_repository.dart';
 import 'package:dreampulse/domain/repositories/sleep_repository.dart';
+import 'package:dreampulse/domain/services/achievement_service.dart';
+import 'package:dreampulse/domain/services/estadisticas_service.dart';
+import 'package:dreampulse/domain/services/monthly_sleep_service.dart';
+import 'package:dreampulse/domain/services/recomendaciones_service.dart';
+import 'package:dreampulse/domain/services/sleep_insight_service.dart';
+import 'package:dreampulse/domain/services/sleep_score_service.dart';
 import 'package:dreampulse/presentation/controllers/profile_controller.dart';
 import 'package:dreampulse/presentation/controllers/sleep_controller.dart';
 import 'package:dreampulse/presentation/controllers/history_controller.dart';
+import 'package:dreampulse/presentation/controllers/stats_controller.dart';
 import 'package:dreampulse/presentation/screens/dashboard_screen.dart';
 import 'package:dreampulse/presentation/screens/home_screen.dart';
 import 'package:dreampulse/presentation/screens/history_screen.dart';
@@ -44,12 +51,25 @@ class PerfilMemoria implements ProfileRepository {
   Future<void> guardar(Usuario usuario) async => this.usuario = usuario;
 }
 
-RegistroSueno registroEjemplo({String id = 'ejemplo'}) => RegistroSueno(
-  id: id,
-  inicio: DateTime(2026, 10, 8, 23),
-  fin: DateTime(2026, 10, 9, 7),
-  calidad: 4,
-  origen: OrigenRegistro.manual,
+RegistroSueno registroEjemplo({String id = 'ejemplo'}) {
+  final ahora = DateTime.now();
+  final inicio = DateTime(ahora.year, ahora.month, ahora.day, 23);
+  return RegistroSueno(
+    id: id,
+    inicio: inicio,
+    fin: inicio.add(const Duration(hours: 8)),
+    calidad: 4,
+    origen: OrigenRegistro.manual,
+  );
+}
+
+StatsController crearStats() => StatsController(
+  estadisticasService: const EstadisticasService(),
+  recomendacionesService: const RecomendacionesService(),
+  monthlySleepService: const MonthlySleepService(),
+  sleepInsightService: const SleepInsightService(),
+  sleepScoreService: const SleepScoreService(),
+  achievementService: const AchievementService(),
 );
 
 Widget envolver(Widget pantalla, {List<RegistroSueno>? inicial}) {
@@ -60,6 +80,7 @@ Widget envolver(Widget pantalla, {List<RegistroSueno>? inicial}) {
       ChangeNotifierProvider.value(value: sleep),
       ChangeNotifierProvider.value(value: profile),
       ChangeNotifierProvider(create: (_) => HistoryController()),
+      ChangeNotifierProvider(create: (_) => crearStats()),
     ],
     child: MaterialApp(
       theme: AppTheme.oscuro(),
@@ -86,6 +107,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Registra tu sueño'), findsOneWidget);
     expect(find.text('8h 00m'), findsWidgets);
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -700),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Guardar registro'), findsOneWidget);
   });
 
@@ -97,6 +123,23 @@ void main() {
     expect(find.text('Tu historial'), findsOneWidget);
     expect(find.textContaining('23:00 → 07:00'), findsOneWidget);
     expect(find.text('Manual'), findsWidgets);
+  });
+
+  testWidgets('editar desde Historial abre una pantalla material completa', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      envolver(const HistoryScreen(), inicial: [registroEjemplo()]),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('23:00 → 07:00'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Editar registro'), findsOneWidget);
+    expect(find.text('Guardar cambios'), findsOneWidget);
+    expect(find.text('Eliminar'), findsOneWidget);
+    expect(find.byType(Scaffold), findsWidgets);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('flujo de registro aparece en historial e inicio', (
@@ -111,6 +154,7 @@ void main() {
           ChangeNotifierProvider.value(value: sleep),
           ChangeNotifierProvider.value(value: profile),
           ChangeNotifierProvider(create: (_) => HistoryController()),
+          ChangeNotifierProvider(create: (_) => crearStats()),
         ],
         child: MaterialApp(theme: AppTheme.oscuro(), home: const HomeScreen()),
       ),
@@ -119,7 +163,10 @@ void main() {
     await tester.tap(find.byIcon(Icons.add_circle_outline));
     await tester.pumpAndSettle();
     expect(find.text('Registra tu sueño'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, -450));
+    await tester.drag(
+      find.byType(SingleChildScrollView).last,
+      const Offset(0, -700),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Guardar registro'));
     await tester.pumpAndSettle();

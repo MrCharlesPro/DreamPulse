@@ -12,7 +12,7 @@ main.dart
         ├── domain/
         │     ├── entities/      Modelos inmutables y enumeraciones
         │     ├── repositories/  Contratos de persistencia
-        │     └── services/      Reglas de estadísticas y recomendaciones
+        │     └── services/      Reglas de estadísticas, logros e insights
         ├── data/
         │     ├── datasources/   Hive y JSON local inicial
         │     └── repositories/  Implementaciones de contratos
@@ -29,6 +29,11 @@ Las pantallas dependen de controladores y contratos del dominio, no de Hive. `ap
 | Clase | Responsabilidad |
 |---|---|
 | `RegistroSueno` | Representa una noche y convierte su contenido a/desde mapas Hive. |
+| `MetaSueno` | Representa la meta de descanso utilizada para evaluar una noche. |
+| `EtiquetaSueno` | Catálogo de etiquetas contextuales asociadas a una noche. |
+| `PuntajeSueno` | Desglosa el puntaje de 0 a 100 entre duración, calidad y regularidad. |
+| `Logro` | Describe progreso y desbloqueo de hitos de descanso. |
+| `ResumenDiaSueno`, `ResumenMesSueno` | Agregados diarios/mensuales para la tabla de sueño. |
 | `OrigenRegistro` | Distingue registros manuales, simulados y automáticos. |
 | `Usuario` | Perfil, objetivo en horas y hora ideal para dormir. |
 | `Dispositivo`, `NocheDispositivo`, `EstadoDispositivo` | Modelan el wearable y datos/estado de conexión. |
@@ -37,6 +42,10 @@ Las pantallas dependen de controladores y contratos del dominio, no de Hive. `ap
 | `SleepRepository`, `ProfileRepository` | Contratos de acceso a noches y perfil. |
 | `EstadisticasService` | Filtra periodos y calcula promedio, calidad, variación y deuda. |
 | `RecomendacionesService` | Aplica reglas sencillas de higiene del sueño. |
+| `MonthlySleepService` | Clasifica duración/calidad por bandas y agrega los resúmenes del mes. |
+| `SleepScoreService` | Calcula puntaje por duración, calidad y regularidad de horarios. |
+| `AchievementService` | Calcula rachas y logros locales. |
+| `SleepInsightService` | Busca asociaciones simples entre etiquetas y calidad. |
 
 ### Datos
 
@@ -56,12 +65,14 @@ Las pantallas dependen de controladores y contratos del dominio, no de Hive. `ap
 | `SimulatedWearableService` | Proporciona wearables y noches sintéticas deterministas para pruebas y demostración. |
 | `SyncService` | Convierte noches del wearable a `RegistroSueno` y evita repetir fechas existentes. |
 | `NotificationService` | Programa/cancela recordatorios diarios por hora local y solicita permiso. |
+| `ExportService` | Genera CSV/PDF compartibles y respalda/restaura datos en JSON local. |
 
 ### Presentación
 
 | Clase | Responsabilidad |
 |---|---|
 | `SleepController` | Estado, carga, guardado y eliminación del historial. |
+| `ExportController` | Expone estados de carga/error/vacío para exportar y restaurar respaldos. |
 | `ProfileController` | Carga y actualización del perfil. |
 | `HistoryController` | Búsqueda, rango de fechas, origen y orden del historial. |
 | `StatsController` | Selección del periodo y exposición de agregados/recomendaciones. |
@@ -73,8 +84,11 @@ Las pantallas dependen de controladores y contratos del dominio, no de Hive. `ap
 | `HistoryScreen` | Lista y filtros; elimina con confirmación y opción deshacer. |
 | `ProfileScreen` | Edición de preferencias personales y recordatorio. |
 | `StatisticsScreen` | Visualización con `fl_chart` para 7/30 días. |
+| `MonthlySleepGrid` | Tabla mensual animada, resumen del mes y detalle de cada noche. |
+| `AchievementsScreen` | Visualiza racha actual y logros desbloqueados/pendientes. |
+| `ExportScreen` | Acciones para compartir exportaciones y restaurar respaldos. |
 | `DevicesScreen` | Búsqueda y vinculación BLE/demo con estado visible. |
 
 ## Persistencia y flujo
 
-Las cajas Hive son `registros`, `perfil` y `ajustes`. Al abrir por primera vez, si no existen noches locales, el repositorio importa el JSON y escribe la marca `datosInicialesCargados`. El registro manual guarda directamente a través de `SleepController`; el flujo de wearable pasa por `SyncService`, deduplica por fecha de inicio y luego recarga el controlador para reflejar cambios en inicio e historial.
+Las cajas Hive son `registros`, `perfil` y `ajustes`. Al abrir por primera vez, si no existen noches locales, el repositorio importa el JSON y escribe la marca `datosInicialesCargados`. El registro manual guarda directamente a través de `SleepController`; el flujo de wearable pasa por `SyncService`, deduplica por fecha de inicio y luego recarga el controlador para reflejar cambios en inicio e historial. El inicio rápido guarda su marca temporal en `ajustes`; CSV/PDF se generan en el directorio temporal para compartirlos, mientras que el respaldo JSON se elige mediante el selector de archivos.

@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/sleep_utils.dart';
 import '../../core/widgets/estado_pantalla.dart';
+import '../../core/widgets/boton_degradado.dart';
 import '../../domain/entities/registro_sueno.dart';
+import '../../domain/services/sleep_score_service.dart';
 import '../../domain/services/recomendaciones_service.dart';
 import '../../presentation/controllers/profile_controller.dart';
 import '../../presentation/controllers/sleep_controller.dart';
@@ -34,15 +36,16 @@ class DashboardScreen extends StatelessWidget {
       );
     }
     final registros = controller.registros;
-    if (registros.isEmpty) {
-      return const EstadoPantalla(
-        mensaje: 'Aún no hay noches registradas. ¡Empieza hoy!',
-        icono: Icons.bedtime_outlined,
-      );
-    }
-    final ultima = registros.first;
-    final progreso = (ultima.duracion.inMinutes / (usuario.metaHoras * 60))
-        .clamp(0.0, 1.0);
+    final sleepController = context.read<SleepController>();
+    final puntaje = registros.isEmpty
+        ? 0
+        : const SleepScoreService()
+              .calcular(
+                registro: registros.first,
+                metaHoras: usuario.metaHoras,
+                recientes: registros.take(7).toList(),
+              )
+              .total;
     return RefreshIndicator(
       onRefresh: controller.cargar,
       child: ListView(
@@ -58,7 +61,7 @@ class DashboardScreen extends StatelessWidget {
                       'BUENAS NOCHES',
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         letterSpacing: 2,
-                        color: AppConstants.lavanda,
+                        color: AppConstants.coral,
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -74,7 +77,7 @@ class DashboardScreen extends StatelessWidget {
                 label: 'Icono de luna',
                 child: const CircleAvatar(
                   radius: 25,
-                  backgroundColor: Color(0xFF282439),
+                  backgroundColor: AppConstants.superficieAlta,
                   child: Icon(
                     Icons.nightlight_round,
                     color: AppConstants.ambar,
@@ -84,31 +87,98 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          _TarjetaUltimoRegistro(
-            registro: ultima,
-            progreso: progreso,
-            meta: usuario.metaHoras,
-          ),
-          const SizedBox(height: 18),
-          _GraficaSemanal(registros: registros),
-          const SizedBox(height: 18),
-          _Resumen(registros: registros, meta: usuario.metaHoras),
-          const SizedBox(height: 18),
-          ...const RecomendacionesService()
-              .generar(registros: registros, metaHoras: usuario.metaHoras)
-              .map(
-                (recomendacion) => Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.tips_and_updates_outlined),
-                    title: Text(recomendacion.titulo),
-                    subtitle: Text(recomendacion.detalle),
-                  ),
+          Row(
+            children: [
+              Expanded(
+                child: BotonDegradado(
+                  onPressed: sleepController.inicioEnCurso != null
+                      ? null
+                      : () async {
+                          try {
+                            await sleepController.iniciarSueno();
+                          } catch (error) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('No se pudo iniciar: $error'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  icon: const Icon(Icons.bedtime_outlined),
+                  label: const Text('Me voy a dormir'),
                 ),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: sleepController.inicioEnCurso != null
+                      ? () async {
+                          try {
+                            await sleepController.terminarSueno();
+                          } catch (error) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('No se pudo cerrar: $error'),
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      : null,
+                  icon: const Icon(Icons.wb_sunny_outlined),
+                  label: const Text('Ya desperté'),
+                ),
+              ),
+            ],
+          ),
+          if (sleepController.inicioEnCurso != null) ...[
+            const SizedBox(height: 8),
+            const Text('Registro de sueño en curso'),
+          ],
+          const SizedBox(height: 16),
+          if (registros.isEmpty)
+            const Card(
+              child: ListTile(
+                leading: Icon(Icons.bedtime_outlined),
+                title: Text('Aún no hay noches registradas'),
+                subtitle: Text('Empieza con el registro manual o rápido.'),
+              ),
+            )
+          else ...[
+            _SleepScoreCard(puntaje: puntaje),
+            const SizedBox(height: 16),
+            _TarjetaUltimoRegistro(
+              registro: registros.first,
+              progreso:
+                  (registros.first.duracion.inMinutes /
+                          (usuario.metaHoras * 60))
+                      .clamp(0.0, 1.0),
+              meta: usuario.metaHoras,
+            ),
+            const SizedBox(height: 18),
+            _GraficaSemanal(registros: registros),
+            const SizedBox(height: 18),
+            _Resumen(registros: registros, meta: usuario.metaHoras),
+            const SizedBox(height: 18),
+            ...const RecomendacionesService()
+                .generar(registros: registros, metaHoras: usuario.metaHoras)
+                .map(
+                  (recomendacion) => Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.tips_and_updates_outlined),
+                      title: Text(recomendacion.titulo),
+                      subtitle: Text(recomendacion.detalle),
+                    ),
+                  ),
+                ),
+          ],
           const SizedBox(height: 8),
           Card(
             child: ListTile(
-              leading: const Icon(Icons.insights, color: AppConstants.lavanda),
+              leading: const Icon(Icons.insights, color: AppConstants.coral),
               title: const Text('Tus estadísticas'),
               subtitle: const Text('Explora tus patrones de descanso'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -149,14 +219,17 @@ class _TarjetaUltimoRegistro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-    child: Padding(
+    color: Colors.transparent,
+    clipBehavior: Clip.antiAlias,
+    child: Container(
+      decoration: const BoxDecoration(gradient: AppConstants.degradado),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.bedtime, color: AppConstants.lavanda),
+              const Icon(Icons.bedtime, color: AppConstants.coral),
               const SizedBox(width: 9),
               const Expanded(child: Text('Sueño de anoche')),
               Text(
@@ -191,7 +264,7 @@ class _TarjetaUltimoRegistro extends StatelessWidget {
               const Icon(
                 Icons.arrow_downward,
                 size: 16,
-                color: AppConstants.lavanda,
+                color: AppConstants.coral,
               ),
               const SizedBox(width: 6),
               Text(SleepUtils.hora(registro.inicio)),
@@ -214,7 +287,9 @@ class _TarjetaUltimoRegistro extends StatelessWidget {
               builder: (context, value, _) => LinearProgressIndicator(
                 value: value,
                 minHeight: 8,
-                backgroundColor: Colors.white12,
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
               ),
             ),
           ),
@@ -222,6 +297,63 @@ class _TarjetaUltimoRegistro extends StatelessWidget {
           Text(
             'Meta: ${meta.toStringAsFixed(1)} h',
             style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SleepScoreCard extends StatelessWidget {
+  const _SleepScoreCard({required this.puntaje});
+
+  final int puntaje;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(18),
+      child: Row(
+        children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: puntaje / 100),
+            duration: const Duration(milliseconds: 900),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) => SizedBox(
+              width: 72,
+              height: 72,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    value: value,
+                    strokeWidth: 7,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  Text(
+                    '$puntaje',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Puntaje de sueño',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 4),
+                const Text('Duración, calidad y regularidad'),
+              ],
+            ),
           ),
         ],
       ),
@@ -286,8 +418,13 @@ class _GraficaSemanal extends StatelessWidget {
                             width: 18,
                             decoration: BoxDecoration(
                               color: dato.$2 == 0
-                                  ? Colors.white12
-                                  : AppConstants.violeta,
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest
+                                  : null,
+                              gradient: dato.$2 == 0
+                                  ? null
+                                  : AppConstants.degradado,
                               borderRadius: BorderRadius.circular(9),
                             ),
                           ),
@@ -370,7 +507,7 @@ class _DatoResumen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icono, color: AppConstants.lavanda),
+          Icon(icono, color: AppConstants.coral),
           const SizedBox(height: 12),
           Text(valor, style: Theme.of(context).textTheme.titleLarge),
           Text(titulo, style: Theme.of(context).textTheme.bodySmall),

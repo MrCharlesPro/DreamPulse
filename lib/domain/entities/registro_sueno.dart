@@ -1,3 +1,5 @@
+import 'etiqueta_sueno.dart';
+
 enum OrigenRegistro { manual, simulado, automatico }
 
 class RegistroSueno {
@@ -7,6 +9,8 @@ class RegistroSueno {
     required this.fin,
     required this.calidad,
     required this.origen,
+    this.notas = '',
+    this.etiquetas = const [],
   });
 
   final String id;
@@ -14,6 +18,8 @@ class RegistroSueno {
   final DateTime fin;
   final int calidad;
   final OrigenRegistro origen;
+  final String notas;
+  final List<EtiquetaSueno> etiquetas;
 
   Duration get duracion => fin.difference(inicio);
   DateTime get fecha => DateTime(inicio.year, inicio.month, inicio.day);
@@ -24,6 +30,8 @@ class RegistroSueno {
     'fin': fin.toIso8601String(),
     'calidad': calidad,
     'origen': origen.name,
+    'notas': notas,
+    'etiquetas': etiquetas.map((etiqueta) => etiqueta.name).toList(),
   };
 
   factory RegistroSueno.fromMap(Map<dynamic, dynamic> map) => RegistroSueno(
@@ -35,5 +43,11 @@ class RegistroSueno {
       (valor) => valor.name == map['origen'],
       orElse: () => OrigenRegistro.manual,
     ),
+    notas: map['notas'] as String? ?? '',
+    etiquetas: (map['etiquetas'] as List<dynamic>? ?? const [])
+        .whereType<String>()
+        .map(EtiquetaSueno.desdeNombre)
+        .whereType<EtiquetaSueno>()
+        .toList(),
   );
 }

@@ -10,15 +10,21 @@ import 'data/repositories/hive_profile_repository.dart';
 import 'data/repositories/hive_sleep_repository.dart';
 import 'presentation/controllers/profile_controller.dart';
 import 'presentation/controllers/device_controller.dart';
+import 'presentation/controllers/export_controller.dart';
 import 'presentation/controllers/history_controller.dart';
 import 'presentation/controllers/settings_controller.dart';
 import 'presentation/controllers/sleep_controller.dart';
 import 'presentation/controllers/stats_controller.dart';
 import 'presentation/screens/home_screen.dart';
 import 'domain/services/estadisticas_service.dart';
+import 'domain/services/achievement_service.dart';
+import 'domain/services/monthly_sleep_service.dart';
 import 'domain/services/recomendaciones_service.dart';
+import 'domain/services/sleep_insight_service.dart';
+import 'domain/services/sleep_score_service.dart';
 import 'services/ble_wearable_service.dart';
 import 'services/notification_service.dart';
+import 'services/export_service.dart';
 import 'services/simulated_wearable_service.dart';
 import 'services/sync_service.dart';
 
@@ -42,7 +48,7 @@ class DreamPulseApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => SleepController(sleepRepository)..cargar(),
+          create: (_) => SleepController(sleepRepository, ajustes)..cargar(),
         ),
         ChangeNotifierProvider(
           create: (_) => ProfileController(profileRepository)..cargar(),
@@ -52,7 +58,14 @@ class DreamPulseApp extends StatelessWidget {
           create: (_) => StatsController(
             estadisticasService: const EstadisticasService(),
             recomendacionesService: const RecomendacionesService(),
+            monthlySleepService: const MonthlySleepService(),
+            sleepInsightService: const SleepInsightService(),
+            sleepScoreService: const SleepScoreService(),
+            achievementService: const AchievementService(),
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ExportController(ExportService()),
         ),
         ChangeNotifierProvider(
           create: (_) => DeviceController(
