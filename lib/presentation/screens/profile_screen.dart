@@ -5,6 +5,7 @@ import '../../domain/entities/usuario.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../../core/constants/app_constants.dart';
+import '../controllers/auth_controller.dart';
 import 'achievements_screen.dart';
 import 'devices_screen.dart';
 import 'export_screen.dart';
@@ -220,6 +221,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }
             },
           ),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: context.watch<AuthController>().procesando
+              ? null
+              : () async {
+                  final auth = context.read<AuthController>();
+                  final cerrado = await auth.cerrarSesion();
+                  if (!context.mounted || cerrado) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(auth.error ?? 'No se pudo cerrar sesión.'),
+                    ),
+                  );
+                },
+          icon: const Icon(Icons.logout),
+          label: const Text('Cerrar sesión'),
         ),
       ],
     );

@@ -14,6 +14,7 @@ Future<void> main() async {
     Hive.openBox<Map<dynamic, dynamic>>('registros'),
     Hive.openBox<Map<dynamic, dynamic>>('perfil'),
     Hive.openBox<Map<dynamic, dynamic>>('ajustes'),
+    Hive.openBox<bool>('sesion'),
   ]);
   final notificaciones = NotificationService(FlutterLocalNotificationsPlugin());
   try {

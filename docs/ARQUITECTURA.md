@@ -66,6 +66,7 @@ Las pantallas dependen de controladores y contratos del dominio, no de Hive. `ap
 | `SyncService` | Convierte noches del wearable a `RegistroSueno` y evita repetir fechas existentes. |
 | `NotificationService` | Programa/cancela recordatorios diarios por hora local y solicita permiso. |
 | `ExportService` | Genera CSV/PDF compartibles y respalda/restaura datos en JSON local. |
+| `HiveAuthSessionRepository` | Conserva únicamente el indicador booleano de sesión en una caja Hive separada. |
 
 ### Presentación
 
@@ -78,7 +79,10 @@ Las pantallas dependen de controladores y contratos del dominio, no de Hive. `ap
 | `StatsController` | Selección del periodo y exposición de agregados/recomendaciones. |
 | `DeviceController` | Cambia entre modo demo/BLE, búsqueda, conexión y sincronización. |
 | `SettingsController` | Estado persistente del recordatorio diario. |
+| `AuthController` | Carga el indicador de sesión, autentica, aplica bloqueo temporal y cierra sesión sin exponer datos sensibles. |
 | `HomeScreen` | Navegación inferior con estado local de pestaña. |
+| `AuthGate` | Muestra carga/login o la navegación principal según el estado de sesión. |
+| `LoginScreen` | Captura credenciales con longitud limitada y contraseña oculta; presenta errores genéricos. |
 | `DashboardScreen` | Resumen del sueño, barras semanales, consejos y accesos rápidos. |
 | `RecordScreen` | Alta/edición manual con validación de duración. |
 | `HistoryScreen` | Lista y filtros; elimina con confirmación y opción deshacer. |
@@ -92,3 +96,5 @@ Las pantallas dependen de controladores y contratos del dominio, no de Hive. `ap
 ## Persistencia y flujo
 
 Las cajas Hive son `registros`, `perfil` y `ajustes`. Al abrir por primera vez, si no existen noches locales, el repositorio importa el JSON y escribe la marca `datosInicialesCargados`. El registro manual guarda directamente a través de `SleepController`; el flujo de wearable pasa por `SyncService`, deduplica por fecha de inicio y luego recarga el controlador para reflejar cambios en inicio e historial. El inicio rápido guarda su marca temporal en `ajustes`; CSV/PDF se generan en el directorio temporal para compartirlos, mientras que el respaldo JSON se elige mediante el selector de archivos.
+
+El acceso requiere una sesión local booleana en la caja `sesion`. `LoginValidator` valida campos en el dominio; `AuthenticationService` aplica SHA-256 con sal a la clave de demostración; `AuthController` gestiona intentos y bloqueo de 30 segundos. No se guardan contraseñas ni se escriben datos del formulario en logs. Es un acceso local de demostración, no autenticación de producción.

@@ -32,6 +32,14 @@ services (BLE, simulación de wearable, sincronización y avisos locales)
 - Consejos de higiene del sueño y recordatorio diario configurable.
 - Wearable simulado para demostración sin reloj. El modo Bluetooth busca y conecta dispositivos BLE cercanos.
 
+## Seguridad
+
+- DreamPulse solicita usuario y contraseña antes de mostrar el Dashboard. La validación de campos reside en `LoginValidator` y la pantalla muestra mensajes genéricos, sin indicar cuál credencial falló.
+- Las entradas se limitan en la UI y nuevamente en la lógica (usuario: 30 caracteres; contraseña: 8–64). La contraseña se oculta inicialmente y puede mostrarse de forma explícita.
+- El acceso de demostración calcula SHA-256 sobre la contraseña ingresada junto con una sal y compara el digest; no conserva la contraseña en Hive. El único dato de sesión persistido es un booleano en la caja `sesion`.
+- Cinco intentos no válidos activan un bloqueo local de 30 segundos. La app no imprime usuario, contraseña ni datos del formulario en consola/Logcat.
+- **Alcance importante:** el acceso y las credenciales de esta app offline son para demostración académica, no sustituyen autenticación de servidor ni almacenamiento de credenciales de producción. Un hash estático incluido en una aplicación cliente puede inspeccionarse mediante ingeniería inversa; no se deben usar credenciales reales.
+
 ## Requisitos y ejecución
 
 - Flutter/Dart compatibles con `environment.sdk: ^3.12.2`.

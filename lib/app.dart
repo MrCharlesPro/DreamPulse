@@ -8,6 +8,9 @@ import 'data/datasources/hive_sleep_data_source.dart';
 import 'data/datasources/mock_sleep_data_source.dart';
 import 'data/repositories/hive_profile_repository.dart';
 import 'data/repositories/hive_sleep_repository.dart';
+import 'data/repositories/hive_auth_session_repository.dart';
+import 'domain/services/authentication_service.dart';
+import 'presentation/controllers/auth_controller.dart';
 import 'presentation/controllers/profile_controller.dart';
 import 'presentation/controllers/device_controller.dart';
 import 'presentation/controllers/export_controller.dart';
@@ -15,7 +18,7 @@ import 'presentation/controllers/history_controller.dart';
 import 'presentation/controllers/settings_controller.dart';
 import 'presentation/controllers/sleep_controller.dart';
 import 'presentation/controllers/stats_controller.dart';
-import 'presentation/screens/home_screen.dart';
+import 'presentation/screens/auth_gate.dart';
 import 'domain/services/estadisticas_service.dart';
 import 'domain/services/achievement_service.dart';
 import 'domain/services/monthly_sleep_service.dart';
@@ -47,6 +50,12 @@ class DreamPulseApp extends StatelessWidget {
     final simulated = SimulatedWearableService();
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthController(
+            const AuthenticationService(),
+            HiveAuthSessionRepository(Hive.box<bool>('sesion')),
+          )..cargarSesion(),
+        ),
         ChangeNotifierProvider(
           create: (_) => SleepController(sleepRepository, ajustes)..cargar(),
         ),
@@ -87,7 +96,7 @@ class DreamPulseApp extends StatelessWidget {
         supportedLocales: const [Locale('es')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         theme: AppTheme.oscuro(),
-        home: const HomeScreen(),
+        home: const AuthGate(),
       ),
     );
   }
